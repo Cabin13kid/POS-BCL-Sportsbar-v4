@@ -1,0 +1,98 @@
+{
+  "project_type": "hybrid_fullstack",
+  "domain": "bar_operations_pos",
+  "theme": "Dark",
+  "archetype": "Archetype 5 (Luxury) with Archetype 4 (Swiss Functionality)",
+  "vibe": "Editorial dark ops dashboard with luxury fintech clarity. High-end hospitality POS, optimized for fast tapping in dim environments.",
+  "colors": {
+    "background": "slate-950",
+    "surface": "slate-900",
+    "surface_elevated": "slate-800",
+    "border": "slate-800",
+    "border_light": "white/10",
+    "primary": "amber-500",
+    "primary_hover": "amber-400",
+    "primary_foreground": "slate-950",
+    "secondary": "slate-800",
+    "secondary_hover": "slate-700",
+    "secondary_foreground": "slate-50",
+    "success": "emerald-500",
+    "success_foreground": "emerald-950",
+    "destructive": "rose-500",
+    "destructive_foreground": "rose-950",
+    "text_main": "slate-50",
+    "text_muted": "slate-400"
+  },
+  "typography": {
+    "font_headings": "Chivo",
+    "font_body": "Manrope",
+    "font_mono": "JetBrains Mono",
+    "rules": [
+      "Headings (H1-H3) MUST use tracking-tight for a modern, compressed technical look.",
+      "All prices, inventory counts, and order totals MUST use JetBrains Mono for tabular alignment and scanability.",
+      "Buttons and Labels use Manrope font-semibold with tracking-wide if uppercase."
+    ]
+  },
+  "layout_and_spacing": {
+    "strategy": "Control Room Grid",
+    "rules": [
+      "POS Order View: Split layout. Left 2/3 for Menu (Grid of items), Right 1/3 for Active Order Ticket.",
+      "Generous padding for touch targets: Minimum h-14 or p-4 for all menu items and action buttons.",
+      "Floorplan Canvas: relative container with absolute positioned nodes (tables). Use bg-slate-950 with a subtle CSS background grid.",
+      "Inventory & Admin views: Dense, border-collapse tables with right-aligned numeric columns."
+    ]
+  },
+  "surface_strategies": {
+    "cards_and_panels": "Flat backgrounds (bg-slate-900), 1px solid border (border-slate-800). No soft drop shadows. Keep it technical and flat.",
+    "interactive_elements": "Hover states must explicitly lighten the background (e.g., hover:bg-slate-800). Active tables/orders get an amber glow (shadow-[0_0_15px_rgba(245,158,11,0.2)]) and border-amber-500.",
+    "glassmorphism": "Used ONLY for sticky headers or bottom action bars (checkout). Use bg-slate-950/80 with backdrop-blur-xl."
+  },
+  "components_and_libraries": {
+    "shadcn_components": [
+      "button",
+      "card",
+      "tabs",
+      "dialog",
+      "input",
+      "label",
+      "table",
+      "badge",
+      "dropdown-menu",
+      "select"
+    ],
+    "icons": {
+      "library": "@phosphor-icons/react",
+      "style": "Use 'duotone' for large category/empty state icons, 'regular' for standard UI buttons."
+    },
+    "custom_elements": [
+      "Category Tabs: Large, horizontal scrollable pills. Active: bg-amber-500 text-slate-950. Inactive: bg-slate-800 text-slate-400.",
+      "Floorplan Node: Circular or rounded-xl div with framer-motion drag. Color coded by status (Green=Available, Amber=Occupied, Rose=Action Needed).",
+      "Menu Item Button: Square aspect ratio bento item, containing name and price. Active press scales down slightly (scale-95)."
+    ]
+  },
+  "media": {
+    "image_urls": {
+      "login_bg": {
+        "url": "https://static.prod-images.emergentagent.com/jobs/501e447e-ce3c-433e-bb5d-f0d7f8030277/images/37575875f9d7e98ca44ef63f36c2a87d758d4b4d19b55f302c968db9bad02f3c.png",
+        "description": "Cinematic dark modern bar interior. Use as full-screen background cover for the Login page, with a heavy dark overlay (bg-slate-950/80) so the JWT form is readable."
+      }
+    }
+  },
+  "accessibility_and_testing": {
+    "rules": [
+      "Contrast: Muted text must be at least slate-400 to pass WCAG AA on slate-900 background.",
+      "Focus Rings: Use focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-950.",
+      "Testing (CRITICAL): ALL interactive elements MUST have role-based data-testid attributes (e.g., data-testid='login-submit-btn', data-testid='category-tab-frisdrank', data-testid='menu-item-cola')."
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Install Tailwind, Framer Motion, and @phosphor-icons/react.",
+    "Ensure the entire interface and copy is in Dutch (NL) as requested.",
+    "Implement JWT Login as the entry point using the provided login_bg image.",
+    "POS Module: Build a split-screen dashboard where users can tap a floorplan table, select categories (Frisdrank, Non alcoholisch Bier, Alcohol, Snacks, Eten), tap menu items to add to ticket, and submit.",
+    "Floorplan Canvas: Implement drag-and-drop for tables (can use framer-motion's <motion.div drag> or react-dnd) + list editor view to add/remove/rename tables.",
+    "Inventory & Menu Management: Build admin views to add/edit menu items and link them to inventory.",
+    "Inventory Logic: Explicitly support tracking 'Trays' (Units per package, and number of Trays in storage) alongside 'Loose Units' (losse units).",
+    "Initial Seed Data Requirement: Clear standard presets. Initialize with 0 inventory for all items. Add specific items to categories: Frisdrank (Coca Cola, Coca Cola Zero, Fanta, Sprite, Ice Tea Sparkling, Ice Tea Green, Chocomelk, Spa Rood, Spa Blauw, AA Sportdrank), Non alcoholisch Bier (Affligem Blond 0.0, Desperados 0.0, Texels 0.0, Grolsch Radler 0.0), Alcohol, Snacks (Naturel Chips), Eten (Spareribs, Pasta met balletjes, Pasta Vega)."
+  ]
+}
