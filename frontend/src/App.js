@@ -10,8 +10,10 @@ import Orders from "@/pages/Orders";
 import Floorplan from "@/pages/Floorplan";
 import MenuManagement from "@/pages/MenuManagement";
 import Inventory from "@/pages/Inventory";
+import Users from "@/pages/Users";
+import Promotions from "@/pages/Promotions";
 
-const Protected = ({ children }) => {
+const Protected = ({ children, roles }) => {
   const { user, loading } = useAuth();
   if (loading)
     return (
@@ -20,6 +22,13 @@ const Protected = ({ children }) => {
       </div>
     );
   if (!user) return <Navigate to="/login" replace />;
+  if (roles && !roles.includes(user.role))
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-300 gap-2">
+        <div className="text-2xl font-semibold text-rose-400">Geen toegang</div>
+        <div className="text-sm text-slate-500">Je hebt geen rechten voor deze pagina.</div>
+      </div>
+    );
   return children;
 };
 
@@ -50,9 +59,46 @@ function App() {
             >
               <Route path="/" element={<POS />} />
               <Route path="/orders" element={<Orders />} />
-              <Route path="/floorplan" element={<Floorplan />} />
-              <Route path="/menu" element={<MenuManagement />} />
-              <Route path="/inventory" element={<Inventory />} />
+              <Route
+                path="/floorplan"
+                element={
+                  <Protected roles={["admin", "manager"]}>
+                    <Floorplan />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/menu"
+                element={
+                  <Protected roles={["admin", "manager"]}>
+                    <MenuManagement />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/inventory"
+                element={
+                  <Protected roles={["admin", "manager"]}>
+                    <Inventory />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/promotions"
+                element={
+                  <Protected roles={["admin"]}>
+                    <Promotions />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/users"
+                element={
+                  <Protected roles={["admin"]}>
+                    <Users />
+                  </Protected>
+                }
+              />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

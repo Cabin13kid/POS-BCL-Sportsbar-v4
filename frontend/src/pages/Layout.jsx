@@ -9,19 +9,33 @@ import {
   BookOpen,
   Map,
   LogOut,
+  Users as UsersIcon,
+  Tag,
+  Shield,
 } from "lucide-react";
 
-const nav = [
-  { to: "/", icon: LayoutGrid, label: "POS", end: true },
-  { to: "/orders", icon: ClipboardList, label: "Bestellingen" },
-  { to: "/floorplan", icon: Map, label: "Plattegrond" },
-  { to: "/menu", icon: BookOpen, label: "Menu" },
-  { to: "/inventory", icon: Package, label: "Voorraad" },
+// roles allowed per nav entry
+const NAV = [
+  { to: "/", icon: LayoutGrid, label: "POS", roles: ["admin", "manager", "werknemer"], end: true },
+  { to: "/orders", icon: ClipboardList, label: "Bestellingen", roles: ["admin", "manager", "werknemer"] },
+  { to: "/floorplan", icon: Map, label: "Plattegrond", roles: ["admin", "manager"] },
+  { to: "/menu", icon: BookOpen, label: "Menu", roles: ["admin", "manager"] },
+  { to: "/inventory", icon: Package, label: "Voorraad", roles: ["admin", "manager"] },
+  { to: "/promotions", icon: Tag, label: "Promoties", roles: ["admin"] },
+  { to: "/users", icon: UsersIcon, label: "Gebruikers", roles: ["admin"] },
 ];
+
+const ROLE_BADGE = {
+  admin: "bg-amber-500/15 text-amber-400 border-amber-500/40",
+  manager: "bg-sky-500/15 text-sky-400 border-sky-500/40",
+  werknemer: "bg-slate-700/40 text-slate-300 border-slate-600",
+};
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const role = user?.role || "werknemer";
+  const visible = NAV.filter((n) => n.roles.includes(role));
 
   return (
     <div className="min-h-screen flex bg-slate-950 text-slate-50">
@@ -39,7 +53,7 @@ export default function Layout() {
         </div>
 
         <nav className="flex-1 py-4 space-y-1 px-3">
-          {nav.map((n) => (
+          {visible.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
@@ -63,6 +77,12 @@ export default function Layout() {
           <div className="px-3 py-2 text-xs">
             <div className="text-slate-500">Ingelogd als</div>
             <div className="text-slate-200 truncate" data-testid="current-user">{user?.email}</div>
+            <span
+              className={`mt-1.5 inline-flex items-center gap-1 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full border ${ROLE_BADGE[role] || ROLE_BADGE.werknemer}`}
+              data-testid="current-role"
+            >
+              <Shield className="h-3 w-3" /> {role}
+            </span>
           </div>
           <button
             onClick={async () => {

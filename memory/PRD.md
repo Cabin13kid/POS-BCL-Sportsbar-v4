@@ -26,6 +26,10 @@ Build an interface to track bar orders + inventory. Adjustable floorplan (drag-a
 - ✅ Orders page with open/paid tabs, auto-refresh, decrement inventory + tray conversion
 - ✅ Dutch UI throughout
 - ✅ Dark mode design (slate-950 / amber-500) with Chivo/Manrope/JetBrains Mono fonts
+- ✅ **Role-based access** (admin / manager / werknemer) — 403 enforced server-side, sidebar+routes filtered client-side
+- ✅ **Gebruikersbeheer** (admin only) — CRUD users, change role, reset password, self-delete blocked
+- ✅ **Promoties** (admin only mutate) — % over bestelling OR vaste € korting per item, met optionele start/eind datetime, actief-toggle, picker in POS
+- ✅ **Items toevoegen aan open bestellingen** — POST /api/orders/{id}/items merges qty, recalculates totals (incl. existing promo); blocked on paid orders
 
 ## Backlog (P1/P2)
 - P1: Order analytics dashboard (omzet per dag/categorie)

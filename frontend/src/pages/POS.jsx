@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function POS() {
   const [menu, setMenu] = useState([]);
   const [tables, setTables] = useState([]);
+  const [promos, setPromos] = useState([]);
+  const [promoId, setPromoId] = useState("");
   const [selectedTable, setSelectedTable] = useState(null);
   const [cat, setCat] = useState(CATEGORIES[0]);
   const [cart, setCart] = useState([]); // [{menu_item_id, name, price, qty}]
@@ -15,9 +17,14 @@ export default function POS() {
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
-    const [m, t] = await Promise.all([api.get("/menu"), api.get("/tables")]);
+    const [m, t, p] = await Promise.all([
+      api.get("/menu"),
+      api.get("/tables"),
+      api.get("/promotions"),
+    ]);
     setMenu(m.data);
     setTables(t.data);
+    setPromos(p.data.filter((x) => x.active));
   };
 
   useEffect(() => {
@@ -52,7 +59,21 @@ export default function POS() {
   const removeItem = (id) =>
     setCart((c) => c.filter((i) => i.menu_item_id !== id));
 
-  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const activePromo = promos.find((p) => p.id === promoId);
+  let discount = 0;
+  if (activePromo) {
+    if (activePromo.type === "order_percent") {
+      discount = subtotal * (activePromo.value / 100);
+    } else if (activePromo.type === "item_fixed") {
+      const ids = new Set(activePromo.menu_item_ids || []);
+      cart.forEach((i) => {
+        if (ids.has(i.menu_item_id)) discount += activePromo.value * i.qty;
+      });
+    }
+  }
+  discount = Math.min(discount, subtotal);
+  const total = subtotal - discount;
 
   const submit = async () => {
     if (cart.length === 0) {
@@ -66,10 +87,12 @@ export default function POS() {
         table_name: selectedTable?.name || "Bar",
         items: cart,
         note: note || null,
+        promotion_id: promoId || null,
       });
       toast.success(`Bestelling geplaatst (${formatEUR(total)})`);
       setCart([]);
       setNote("");
+      setPromoId("");
       setSelectedTable(null);
     } catch (e) {
       toast.error(formatApiErrorDetail(e.response?.data?.detail) || e.message);
@@ -266,6 +289,33 @@ export default function POS() {
               className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-sm resize-none focus:outline-none focus:border-amber-500/50"
               data-testid="cart-note"
             />
+            {promos.length > 0 && (
+              <select
+                value={promoId}
+                onChange={(e) => setPromoId(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-sm focus:outline-none focus:border-amber-500/50"
+                data-testid="cart-promo-select"
+              >
+                <option value="">— Geen promotie —</option>
+                {promos.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.type === "order_percent" ? `${p.value}%` : formatEUR(p.value)})
+                  </option>
+                ))}
+              </select>
+            )}
+            {discount > 0 && (
+              <div className="flex items-baseline justify-between text-sm">
+                <span className="text-slate-500">Subtotaal</span>
+                <span className="font-mono tabular text-slate-400">{formatEUR(subtotal)}</span>
+              </div>
+            )}
+            {discount > 0 && (
+              <div className="flex items-baseline justify-between text-sm">
+                <span className="text-emerald-400">Korting</span>
+                <span className="font-mono tabular text-emerald-400">−{formatEUR(discount)}</span>
+              </div>
+            )}
             <div className="flex items-baseline justify-between">
               <span className="text-xs uppercase tracking-widest text-slate-500">
                 Totaal
