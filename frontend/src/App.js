@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Toaster } from "sonner";
 import Login from "@/pages/Login";
 import Layout from "@/pages/Layout";
-import POS from "@/pages/POS";
+import Dashboard from "@/pages/Dashboard";
 import Orders from "@/pages/Orders";
 import Floorplan from "@/pages/Floorplan";
 import MenuManagement from "@/pages/MenuManagement";
@@ -57,7 +57,7 @@ function App() {
                 </Protected>
               }
             >
-              <Route path="/" element={<POS />} />
+              <Route path="/" element={<Dashboard />} />
               <Route path="/orders" element={<Orders />} />
               <Route
                 path="/floorplan"

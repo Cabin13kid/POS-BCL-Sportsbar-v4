@@ -47,7 +47,7 @@ export default function Login() {
             <div className="h-10 w-10 rounded-lg bg-amber-500 flex items-center justify-center">
               <Beer className="h-5 w-5 text-slate-950" />
             </div>
-            <span className="text-slate-50 font-semibold tracking-wide">BARTRACK</span>
+            <span className="text-slate-50 font-semibold tracking-wide">BARTRACK BCL</span>
           </div>
           <div className="max-w-md">
             <h1 className="text-5xl xl:text-6xl text-slate-50 font-bold tracking-tight leading-[1.05]">

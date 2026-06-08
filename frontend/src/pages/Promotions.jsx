@@ -73,7 +73,10 @@ export default function Promotions() {
         name: form.name,
         type: form.type,
         value: Number(form.value),
-        menu_item_ids: form.type === "item_fixed" ? form.menu_item_ids : [],
+        menu_item_ids:
+          form.type === "item_fixed" || form.type === "item_percent"
+            ? form.menu_item_ids
+            : [],
         active: form.active,
         starts_at: form.starts_at ? new Date(form.starts_at).toISOString() : null,
         ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null,
@@ -158,13 +161,13 @@ export default function Promotions() {
             </div>
 
             <div className="mt-4 text-3xl font-mono tabular font-bold text-amber-400">
-              {p.type === "order_percent"
-                ? `${p.value}%`
-                : formatEUR(p.value)}
+              {p.type === "item_fixed" ? formatEUR(p.value) : `${p.value}%`}
             </div>
             <p className="text-xs text-slate-400 mt-1">
               {p.type === "order_percent"
                 ? "korting over hele bestelling"
+                : p.type === "item_percent"
+                ? `% korting op ${p.menu_item_ids.length} items`
                 : `vaste korting per item (${p.menu_item_ids.length} items)`}
             </p>
 
@@ -224,12 +227,13 @@ export default function Promotions() {
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-800 text-slate-50">
                     <SelectItem value="order_percent">% over bestelling</SelectItem>
+                    <SelectItem value="item_percent">% op geselecteerde items</SelectItem>
                     <SelectItem value="item_fixed">€ vast per item</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>{form.type === "order_percent" ? "Percentage" : "Bedrag (€)"}</Label>
+                <Label>{form.type === "item_fixed" ? "Bedrag (€)" : "Percentage"}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -241,7 +245,7 @@ export default function Promotions() {
               </div>
             </div>
 
-            {form.type === "item_fixed" && (
+            {(form.type === "item_fixed" || form.type === "item_percent") && (
               <div>
                 <Label>Geldig voor items</Label>
                 <div className="mt-1.5 max-h-44 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 p-2 scrollbar-thin">

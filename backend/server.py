@@ -103,7 +103,7 @@ class OrderIn(BaseModel):
     table_name: Optional[str] = None
     items: List[OrderItem]
     note: Optional[str] = None
-    promotion_id: Optional[str] = None
+    promotion_ids: List[str] = []
 
 
 class OrderOut(BaseModel):
@@ -112,8 +112,9 @@ class OrderOut(BaseModel):
     table_name: Optional[str] = None
     items: List[OrderItem]
     total: float
+    subtotal: float = 0.0
     discount: float = 0.0
-    promotion_id: Optional[str] = None
+    promotion_ids: List[str] = []
     status: str
     note: Optional[str] = None
     created_at: str
@@ -121,6 +122,21 @@ class OrderOut(BaseModel):
 
 class OrderItemsAdd(BaseModel):
     items: List[OrderItem]
+
+
+class OrderPromotionsIn(BaseModel):
+    promotion_ids: List[str]
+
+
+class ShiftNoteIn(BaseModel):
+    text: str
+
+
+class ShiftNoteOut(BaseModel):
+    id: str
+    text: str
+    author_email: str
+    created_at: str
 
 
 class UserCreateIn(BaseModel):
@@ -510,14 +526,21 @@ async def delete_table(item_id: str, _=Depends(require_manager)):
 
 # ---- Orders ----
 def order_doc_to_out(d: dict) -> dict:
+    # Back-compat: prior orders may have a single `promotion_id`
+    promo_ids = d.get("promotion_ids")
+    if promo_ids is None:
+        legacy = d.get("promotion_id")
+        promo_ids = [legacy] if legacy else []
+    subtotal = round(sum(i["price"] * i["qty"] for i in d.get("items", [])), 2)
     return {
         "id": d["_id"],
         "table_id": d.get("table_id"),
         "table_name": d.get("table_name"),
         "items": d.get("items", []),
-        "total": d.get("total", 0),
+        "subtotal": subtotal,
+        "total": d.get("total", subtotal),
         "discount": d.get("discount", 0.0),
-        "promotion_id": d.get("promotion_id"),
+        "promotion_ids": promo_ids,
         "status": d.get("status", "open"),
         "note": d.get("note"),
         "created_at": d.get("created_at"),
@@ -544,19 +567,42 @@ def promo_is_active(p: dict) -> bool:
     return True
 
 
-def calc_totals(items: list, promo: Optional[dict]):
+def _discount_for_promo(items: list, promo: dict) -> float:
+    if not promo_is_active(promo):
+        return 0.0
+    subtotal = sum(i["price"] * i["qty"] for i in items)
+    t = promo["type"]
+    if t == "order_percent":
+        return round(subtotal * (promo["value"] / 100.0), 2)
+    if t == "item_fixed":
+        ids = set(promo.get("menu_item_ids") or [])
+        d = 0.0
+        for it in items:
+            if it["menu_item_id"] in ids:
+                d += promo["value"] * it["qty"]
+        return round(d, 2)
+    if t == "item_percent":
+        ids = set(promo.get("menu_item_ids") or [])
+        d = 0.0
+        for it in items:
+            if it["menu_item_id"] in ids:
+                d += it["price"] * it["qty"] * (promo["value"] / 100.0)
+        return round(d, 2)
+    return 0.0
+
+
+def calc_totals(items: list, promos: list):
     subtotal = round(sum(i["price"] * i["qty"] for i in items), 2)
-    discount = 0.0
-    if promo and promo_is_active(promo):
-        if promo["type"] == "order_percent":
-            discount = round(subtotal * (promo["value"] / 100.0), 2)
-        elif promo["type"] == "item_fixed":
-            ids = set(promo.get("menu_item_ids") or [])
-            for it in items:
-                if it["menu_item_id"] in ids:
-                    discount += round(promo["value"] * it["qty"], 2)
+    discount = round(sum(_discount_for_promo(items, p) for p in (promos or [])), 2)
     discount = min(discount, subtotal)
     return round(subtotal - discount, 2), round(discount, 2)
+
+
+async def _load_promos(ids: List[str]) -> List[dict]:
+    if not ids:
+        return []
+    docs = await db.promotions.find({"_id": {"$in": ids}}).to_list(100)
+    return docs
 
 
 async def decrement_inventory(items: List[OrderItem]):
@@ -601,11 +647,10 @@ async def list_orders(status: Optional[str] = None, _=Depends(get_current_user))
 async def create_order(payload: OrderIn, _=Depends(get_current_user)):
     if not payload.items:
         raise HTTPException(status_code=400, detail="Bestelling is leeg")
-    promo = None
-    if payload.promotion_id:
-        promo = await db.promotions.find_one({"_id": payload.promotion_id})
+    promos = await _load_promos(payload.promotion_ids)
+    valid_promo_ids = [str(p["_id"]) for p in promos]
     items_dump = [i.model_dump() for i in payload.items]
-    total, discount = calc_totals(items_dump, promo)
+    total, discount = calc_totals(items_dump, promos)
     item_id = str(uuid.uuid4())
     doc = {
         "_id": item_id,
@@ -614,7 +659,7 @@ async def create_order(payload: OrderIn, _=Depends(get_current_user)):
         "items": items_dump,
         "total": total,
         "discount": discount,
-        "promotion_id": payload.promotion_id if promo else None,
+        "promotion_ids": valid_promo_ids,
         "status": "open",
         "note": payload.note,
         "created_at": iso(now_utc()),
@@ -646,17 +691,34 @@ async def add_items_to_order(order_id: str, payload: OrderItemsAdd, _=Depends(ge
         if not merged:
             existing.append(nd)
 
-    promo = None
-    if order.get("promotion_id"):
-        promo = await db.promotions.find_one({"_id": order["promotion_id"]})
-    total, discount = calc_totals(existing, promo)
+    promo_ids = order.get("promotion_ids") or ([order["promotion_id"]] if order.get("promotion_id") else [])
+    promos = await _load_promos(promo_ids)
+    total, discount = calc_totals(existing, promos)
 
     res = await db.orders.find_one_and_update(
         {"_id": order_id},
-        {"$set": {"items": existing, "total": total, "discount": discount}},
+        {"$set": {"items": existing, "total": total, "discount": discount, "promotion_ids": promo_ids}},
         return_document=True,
     )
     await decrement_inventory(payload.items)
+    return order_doc_to_out(res)
+
+
+@api.put("/orders/{order_id}/promotions", response_model=OrderOut)
+async def set_order_promotions(order_id: str, payload: OrderPromotionsIn, _=Depends(get_current_user)):
+    order = await db.orders.find_one({"_id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Bestelling niet gevonden")
+    if order.get("status") != "open":
+        raise HTTPException(status_code=400, detail="Alleen open bestellingen kunnen worden aangepast")
+    promos = await _load_promos(payload.promotion_ids)
+    valid_ids = [str(p["_id"]) for p in promos]
+    total, discount = calc_totals(order.get("items", []), promos)
+    res = await db.orders.find_one_and_update(
+        {"_id": order_id},
+        {"$set": {"promotion_ids": valid_ids, "total": total, "discount": discount}},
+        return_document=True,
+    )
     return order_doc_to_out(res)
 
 
@@ -765,7 +827,7 @@ async def list_promotions(_=Depends(get_current_user)):
 
 @api.post("/promotions", response_model=PromotionOut)
 async def create_promotion(payload: PromotionIn, _=Depends(require_admin)):
-    if payload.type not in ("order_percent", "item_fixed"):
+    if payload.type not in ("order_percent", "item_fixed", "item_percent"):
         raise HTTPException(status_code=400, detail="Ongeldig type")
     item_id = str(uuid.uuid4())
     doc = {"_id": item_id, **payload.model_dump(), "created_at": iso(now_utc())}
@@ -775,7 +837,7 @@ async def create_promotion(payload: PromotionIn, _=Depends(require_admin)):
 
 @api.put("/promotions/{promo_id}", response_model=PromotionOut)
 async def update_promotion(promo_id: str, payload: PromotionIn, _=Depends(require_admin)):
-    if payload.type not in ("order_percent", "item_fixed"):
+    if payload.type not in ("order_percent", "item_fixed", "item_percent"):
         raise HTTPException(status_code=400, detail="Ongeldig type")
     res = await db.promotions.find_one_and_update(
         {"_id": promo_id},
@@ -790,6 +852,82 @@ async def update_promotion(promo_id: str, payload: PromotionIn, _=Depends(requir
 @api.delete("/promotions/{promo_id}")
 async def delete_promotion(promo_id: str, _=Depends(require_admin)):
     await db.promotions.delete_one({"_id": promo_id})
+    return {"ok": True}
+
+
+# ---- Dashboard stats ----
+@api.get("/stats/today")
+async def stats_today(_=Depends(get_current_user)):
+    """Stats voor 'vandaag' = sinds 06:00 lokaal (proxy: laatste 18 uur UTC)."""
+    cutoff = (now_utc() - timedelta(hours=18)).isoformat()
+    cursor = db.orders.find({"created_at": {"$gte": cutoff}})
+    open_count = 0
+    paid_count = 0
+    revenue = 0.0
+    async for o in cursor:
+        if o.get("status") == "paid":
+            paid_count += 1
+            revenue += float(o.get("total") or 0)
+        else:
+            open_count += 1
+    # Low stock: total available < 6
+    low = []
+    async for inv in db.inventory_items.find():
+        total_av = (inv.get("loose_units", 0) +
+                    inv.get("trays_in_storage", 0) * inv.get("units_per_tray", 0))
+        if total_av < 6:
+            low.append({
+                "id": inv["_id"],
+                "name": inv["name"],
+                "category": inv["category"],
+                "total_available": total_av,
+                "loose_units": inv.get("loose_units", 0),
+                "trays_in_storage": inv.get("trays_in_storage", 0),
+                "units_per_tray": inv.get("units_per_tray", 0),
+            })
+    low.sort(key=lambda x: x["total_available"])
+    return {
+        "revenue": round(revenue, 2),
+        "open_count": open_count,
+        "paid_count": paid_count,
+        "low_stock": low,
+    }
+
+
+# ---- Shift notes ----
+def shift_note_to_out(d: dict) -> dict:
+    return {
+        "id": d["_id"],
+        "text": d["text"],
+        "author_email": d.get("author_email", ""),
+        "created_at": d.get("created_at", ""),
+    }
+
+
+@api.get("/shift-notes")
+async def list_shift_notes(_=Depends(get_current_user)):
+    items = await db.shift_notes.find().sort("created_at", -1).to_list(200)
+    return [shift_note_to_out(d) for d in items]
+
+
+@api.post("/shift-notes", response_model=ShiftNoteOut)
+async def create_shift_note(payload: ShiftNoteIn, user=Depends(get_current_user)):
+    if not payload.text.strip():
+        raise HTTPException(status_code=400, detail="Notitie is leeg")
+    item_id = str(uuid.uuid4())
+    doc = {
+        "_id": item_id,
+        "text": payload.text.strip(),
+        "author_email": user["email"],
+        "created_at": iso(now_utc()),
+    }
+    await db.shift_notes.insert_one(doc)
+    return shift_note_to_out(doc)
+
+
+@api.delete("/shift-notes/{note_id}")
+async def delete_shift_note(note_id: str, _=Depends(get_current_user)):
+    await db.shift_notes.delete_one({"_id": note_id})
     return {"ok": True}
 
 

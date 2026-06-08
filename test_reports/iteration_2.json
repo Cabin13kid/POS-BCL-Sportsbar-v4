@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 3 backend testing for multi-promotions, item_percent, stats/today, shift-notes, and PUT /orders/{id}/promotions. 19/19 pytest tests passed covering all requested behaviours.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/register", "issue": "Still publicly accessible (no admin protection). Pre-existing observation from iteration 1 - may be intentional."},
+      {"endpoint": "GET /api/stats/today", "issue": "Cutoff uses naive 'last 18 hours UTC' as proxy for 'today since 06:00 local'. Will misreport across DST/timezones; documented in code comment."},
+      {"endpoint": "DELETE /api/shift-notes/{id}", "issue": "Any authenticated user (incl. werknemer) can delete any note - no author or role check. Consider restricting to author/manager."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration3.py",
+    "/app/test_reports/pytest/iteration3_results.xml"
+  ],
+  "action_items": [
+    "Consider role-restricting DELETE /api/shift-notes/{id} (currently any auth user can delete any note)",
+    "Stats 'today' window should ideally use Europe/Amsterdam local 06:00 boundary instead of a fixed -18h UTC proxy",
+    "calc_totals discount cap is applied to the SUM of all promo discounts; individual promo discounts can still independently exceed the line subtotal for item_percent/item_fixed on partial sets - acceptable per spec but worth noting"
+  ],
+  "critical_code_review_comments": [
+    "server.py is 957 lines - exceeds the 700-line guideline; recommend splitting into routers (auth, orders, promotions, inventory, stats, shift_notes)",
+    "OrderIn legacy field 'promotion_id' is silently ignored by Pydantic (extra='allow' not set); previous iteration 2 test file (test_roles_and_promotions.py) still posts 'promotion_id' which means those promo tests are now NO-OPs that pass only because their assertions equal the no-discount fallback - they should be updated to promotion_ids list. Currently 4 tests in test_roles_and_promotions.py assert discount/total but the request payload uses obsolete 'promotion_id' field so promos aren't actually applied",
+    "PromotionIn model docstring still says type is 'order_percent | item_fixed' - missing 'item_percent' in the docstring (line 157)",
+    "set_order_promotions endpoint has no role guard for 'completed/cancelled' statuses other than 'paid' - any non-open state is rejected with 'Alleen open' which is correct, but message specifically mentions 'open' - fine",
+    "No pagination on GET /api/orders (to_list(1000)), GET /api/shift-notes (to_list(200)) - will become an issue at scale",
+    "decrement_inventory still allows loose_units to go negative on overdraw (pre-existing from iter 1)"
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration3.py"],
+  "success_rate": {"backend": "100% (19/19)", "frontend": "not tested"},
+  "test_credentials": "admin@bar.nl / admin123 (verified). werknemer test users are TEST_-prefixed and cleaned up.",
+  "seed_data_creation": "All test data uses TEST_ prefix and is cleaned up in fixtures/teardown. No persistent data added.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 3 backend fully passing (19/19). Coverage: stats/today (shape, low_stock fields & <6 threshold, revenue/paid_count delta after a paid order); shift-notes (auth required, CRUD, desc sort by created_at, empty/whitespace 400, author_email = caller); item_percent promo creation (admin only, 403 for werknemer); item_percent math (10% on €2 x3 = 0.60); multi-promo additive (order_percent 20% + item_fixed 0.50 on subtotal 6 => 2.70 discount, total 3.30); multi-promo cap (two 60% on €4 => capped 4.0, total 0); PUT /orders/{id}/promotions replaces list & recalculates; PUT filters out invalid promo IDs; PUT on paid order returns 400; werknemer CAN call PUT; OrderOut includes subtotal and promotion_ids list; add-items recalc uses ALL promotion_ids. NOTE: previous test file /app/backend/tests/test_roles_and_promotions.py uses obsolete 'promotion_id' singular field in payloads which is now silently dropped by the new OrderIn model - those promo-application assertions in iter2 pass accidentally and should be migrated to 'promotion_ids' list.",
+  "rca_of_the_issue": "Single test-only failure encountered (test_author_email_is_caller) - root cause: server.create_user lowercases the email before storage, but the test stored the original mixed-case 'TEST_werk_XXX@bar.nl' and compared without normalization. Fixed by using case-insensitive comparison in the test. Backend behaviour is correct (consistent with register/login lowercasing)."
+}

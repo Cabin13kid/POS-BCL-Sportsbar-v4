@@ -16,7 +16,7 @@ import {
 
 // roles allowed per nav entry
 const NAV = [
-  { to: "/", icon: LayoutGrid, label: "POS", roles: ["admin", "manager", "werknemer"], end: true },
+  { to: "/", icon: LayoutGrid, label: "Dashboard", roles: ["admin", "manager", "werknemer"], end: true },
   { to: "/orders", icon: ClipboardList, label: "Bestellingen", roles: ["admin", "manager", "werknemer"] },
   { to: "/floorplan", icon: Map, label: "Plattegrond", roles: ["admin", "manager"] },
   { to: "/menu", icon: BookOpen, label: "Menu", roles: ["admin", "manager"] },
@@ -45,7 +45,7 @@ export default function Layout() {
             <Beer className="h-4.5 w-4.5 text-slate-950" />
           </div>
           <div>
-            <div className="font-semibold tracking-tight">BARTRACK</div>
+            <div className="font-semibold tracking-tight">BARTRACK BCL</div>
             <div className="text-[10px] uppercase tracking-widest text-slate-500">
               ops dashboard
             </div>
