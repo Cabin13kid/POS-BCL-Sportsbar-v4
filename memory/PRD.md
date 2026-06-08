@@ -16,20 +16,17 @@ Build an interface to track bar orders + inventory. Adjustable floorplan (drag-a
 - Orders: create per table, decrement inventory (loose first, then convert tray), mark paid
 - All UI in Dutch
 
-## Implemented (2026-02)
-- ✅ JWT login with seeded admin
-- ✅ Backend FastAPI + Motor + Mongo with 18 seeded items (10 Frisdrank, 4 Non Alcoholisch Bier, 1 Snacks, 3 Eten, 0 Alcohol)
-- ✅ Menu CRUD with inventory_id linking
-- ✅ Inventory CRUD with trays + loose units logic
-- ✅ Floorplan with framer-motion drag-and-drop + list editor
-- ✅ POS split-screen (menu grid + ticket)
-- ✅ Orders page with open/paid tabs, auto-refresh, decrement inventory + tray conversion
-- ✅ Dutch UI throughout
-- ✅ Dark mode design (slate-950 / amber-500) with Chivo/Manrope/JetBrains Mono fonts
-- ✅ **Role-based access** (admin / manager / werknemer) — 403 enforced server-side, sidebar+routes filtered client-side
-- ✅ **Gebruikersbeheer** (admin only) — CRUD users, change role, reset password, self-delete blocked
-- ✅ **Promoties** (admin only mutate) — % over bestelling OR vaste € korting per item, met optionele start/eind datetime, actief-toggle, picker in POS
-- ✅ **Items toevoegen aan open bestellingen** — POST /api/orders/{id}/items merges qty, recalculates totals (incl. existing promo); blocked on paid orders
+## Implemented (2026-02 → 2026-06)
+- ✅ Auth (JWT, 3 roles) + Gebruikersbeheer
+- ✅ Menu / Voorraad / Plattegrond CRUD
+- ✅ POS / Bestellingen / Orders flow
+- ✅ Promoties: types `order_percent`, `item_fixed`, `item_percent` met optionele start/eind + active toggle
+- ✅ **Meerdere promoties per bestelling** (additief, gecapped op subtotal)
+- ✅ **Later promoties toevoegen** via PUT /api/orders/{id}/promotions
+- ✅ **Bestelling detail dialog** (klik kaart → items, promo toggle, items toevoegen, afrekenen)
+- ✅ **Nieuwe bestelling tab** in Bestellingen pagina (verplaatst van POS)
+- ✅ **Dashboard** op `/`: omzet vandaag, open/afgerond counts, voorraad alarm (<6 stuks), shift notities (CRUD)
+- ✅ Hernoemd naar **BARTRACK BCL**
 
 ## Backlog (P1/P2)
 - P1: Order analytics dashboard (omzet per dag/categorie)
