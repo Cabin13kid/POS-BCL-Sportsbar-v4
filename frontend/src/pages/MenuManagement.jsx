@@ -91,8 +91,8 @@ export default function MenuManagement() {
   const invMap = Object.fromEntries(inv.map((i) => [i.id, i]));
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Menu</h1>
           <p className="text-sm text-slate-400 mt-0.5">
@@ -126,7 +126,8 @@ export default function MenuManagement() {
       </div>
 
       <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto scrollbar-thin">
+        <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-slate-900 text-slate-400">
             <tr>
               <th className="text-left p-3 font-medium">Naam</th>
@@ -180,6 +181,7 @@ export default function MenuManagement() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

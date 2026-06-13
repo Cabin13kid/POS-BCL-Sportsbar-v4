@@ -55,7 +55,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-slate-400 mt-0.5">
@@ -64,7 +64,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <Kpi
           icon={Euro}
           label="Omzet vandaag"
@@ -93,7 +93,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Low stock list */}
         <section className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-800 flex items-center gap-2">
@@ -203,18 +203,18 @@ export default function Dashboard() {
 
 const Kpi = ({ icon: Icon, label, value, accent, warning, testid }) => (
   <div
-    className={`rounded-2xl border p-5 ${
+    className={`rounded-2xl border p-3 sm:p-5 ${
       warning
         ? "border-amber-500/30 bg-amber-500/5"
         : "border-slate-800 bg-slate-900/40"
     }`}
     data-testid={testid}
   >
-    <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-slate-500">
-      <Icon className="h-3.5 w-3.5" /> {label}
+    <div className="flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-slate-500">
+      <Icon className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{label}</span>
     </div>
     <div
-      className={`mt-2 font-mono tabular text-3xl font-bold ${
+      className={`mt-1.5 sm:mt-2 font-mono tabular text-xl sm:text-3xl font-bold ${
         accent ? "text-amber-400" : warning ? "text-amber-400" : "text-slate-100"
       }`}
     >

@@ -147,7 +147,7 @@ export default function Orders() {
   );
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Bestellingen</h1>
@@ -647,7 +647,7 @@ function NewOrderForm({ menu, tables, promos, onCreated }) {
         </section>
       </div>
 
-      <aside className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-4 self-start sticky top-6">
+      <aside className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 sm:p-5 space-y-4 lg:self-start lg:sticky lg:top-6">
         <div className="flex items-center gap-2">
           <ShoppingCart className="h-4 w-4 text-amber-400" />
           <h3 className="font-semibold tracking-tight">Bestelling</h3>

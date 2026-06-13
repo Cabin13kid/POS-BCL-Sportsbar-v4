@@ -107,8 +107,8 @@ export default function Promotions() {
     }));
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Promoties</h1>
           <p className="text-sm text-slate-400 mt-0.5">

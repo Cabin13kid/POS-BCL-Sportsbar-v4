@@ -100,8 +100,8 @@ export default function Floorplan() {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Plattegrond</h1>
           <p className="text-sm text-slate-400 mt-0.5">
@@ -136,10 +136,11 @@ export default function Floorplan() {
       </div>
 
       {tab === "canvas" && (
+        <div className="overflow-x-auto scrollbar-thin -mx-4 sm:mx-0 px-4 sm:px-0">
         <div
           ref={canvasRef}
           className="floorplan-grid relative rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden"
-          style={{ width: "100%", maxWidth: CANVAS_W, height: CANVAS_H }}
+          style={{ width: CANVAS_W, height: CANVAS_H }}
           data-testid="floorplan-canvas"
         >
           {tables.length === 0 && (
@@ -178,11 +179,13 @@ export default function Floorplan() {
             </motion.div>
           ))}
         </div>
+        </div>
       )}
 
       {tab === "lijst" && (
         <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto scrollbar-thin">
+          <table className="w-full text-sm min-w-[560px]">
             <thead className="bg-slate-900 text-slate-400">
               <tr>
                 <th className="text-left p-3 font-medium">Naam</th>
@@ -224,6 +227,7 @@ export default function Floorplan() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
