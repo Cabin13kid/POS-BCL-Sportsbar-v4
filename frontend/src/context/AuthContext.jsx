@@ -40,7 +40,11 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await api.post("/auth/logout");
-    } catch {}
+    } catch (e) {
+      // Logout server-call mag falen (token verlopen / netwerk weg).
+      // We loggen het zodat het debugbaar blijft, maar gaan altijd lokaal uitloggen.
+      console.warn("Logout server call failed:", e?.message || e);
+    }
     localStorage.removeItem("token");
     setUser(null);
   };
