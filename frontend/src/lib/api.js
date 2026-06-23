@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// When BACKEND_URL is empty (single-server build) we use relative URLs
+// (same origin as the served React app). In dev/two-server mode the env
+// var points to the external backend URL.
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 export const API = `${BACKEND_URL}/api`;
 
 export const api = axios.create({

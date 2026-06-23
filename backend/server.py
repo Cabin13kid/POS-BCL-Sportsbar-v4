@@ -983,4 +983,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ---- Serve built React frontend (single-server mode) ----
+# When /app/frontend/build/index.html exists, the same FastAPI process
+# serves the React SPA. All non-/api routes fall back to index.html for
+# client-side routing. API routes keep their /api prefix and are matched
+# before this catch-all because they are registered above.
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+BUILD_DIR = (ROOT_DIR.parent / "frontend" / "build").resolve()
+INDEX_HTML = BUILD_DIR / "index.html"
+
+if INDEX_HTML.exists():
+    # Static assets (JS, CSS, images, etc.) under /static/* and root /asset-manifest.json etc.
+    app.mount(
+        "/static",
+        StaticFiles(directory=str(BUILD_DIR / "static")),
+        name="static",
+    )
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str):
+        # Never override API routes (defensive — they match first anyway)
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404)
+        # Serve concrete files from build/ if they exist (favicon.ico, manifest, etc.)
+        candidate = (BUILD_DIR / full_path).resolve()
+        if BUILD_DIR in candidate.parents and candidate.is_file():
+            return FileResponse(candidate)
+        # Otherwise fall back to index.html (React Router handles the path)
+        return FileResponse(INDEX_HTML)
+
+
 logging.basicConfig(level=logging.INFO)
