@@ -233,7 +233,7 @@ def require_roles(*allowed):
 
 require_admin = require_roles("admin")
 require_manager = require_roles("admin", "manager")
--require_werknemer = require_roles("admin", "manager", "werknemer")-
+require_werknemer = require_roles("admin", "manager", "werknemer")
 
 # ---- Seed ----
 SEED_CATEGORIES = ["Frisdrank", "Non alcoholisch Bier", "Alcohol", "Snacks", "Eten"]
