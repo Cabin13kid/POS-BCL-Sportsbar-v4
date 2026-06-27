@@ -233,7 +233,7 @@ def require_roles(*allowed):
 
 require_admin = require_roles("admin")
 require_manager = require_roles("admin", "manager")
-
+require_werknemer = require_roles("admin", "manager", "werknemer")
 
 # ---- Seed ----
 SEED_CATEGORIES = ["Frisdrank", "Non alcoholisch Bier", "Alcohol", "Snacks", "Eten"]
@@ -518,7 +518,7 @@ async def list_tables(_=Depends(get_current_user)):
 
 
 @api.post("/tables", response_model=TableOut)
-async def create_table(payload: TableIn, _=Depends(require_manager)):
+async def create_table(payload: TableIn, _=Depends(require_werknemer)):
     item_id = str(uuid.uuid4())
     doc = {"_id": item_id, **payload.model_dump(), "created_at": iso(now_utc())}
     await db.tables.insert_one(doc)
@@ -526,7 +526,7 @@ async def create_table(payload: TableIn, _=Depends(require_manager)):
 
 
 @api.put("/tables/{item_id}", response_model=TableOut)
-async def update_table(item_id: str, payload: TableIn, _=Depends(require_manager)):
+async def update_table(item_id: str, payload: TableIn, _=Depends(require_werknemer)):
     res = await db.tables.find_one_and_update(
         {"_id": item_id},
         {"$set": payload.model_dump()},
@@ -538,7 +538,7 @@ async def update_table(item_id: str, payload: TableIn, _=Depends(require_manager
 
 
 @api.delete("/tables/{item_id}")
-async def delete_table(item_id: str, _=Depends(require_manager)):
+async def delete_table(item_id: str, _=Depends(require_werknemer)):
     await db.tables.delete_one({"_id": item_id})
     return {"ok": True}
 
